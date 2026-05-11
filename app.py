@@ -16,19 +16,27 @@ st.set_page_config(
 )
 
 # ======================================
+# FUNÇÃO DE FORMATAÇÃO
+# ======================================
+
+def formatar_moeda(valor):
+
+    return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+# ======================================
 # TÍTULO
 # ======================================
 
 st.title("💰 Preço Certo")
 
 st.caption(
-    "Sistema profissional de precificação"
+    "Precifique com inteligência."
 )
 
 st.divider()
 
 # ======================================
-# LAYOUT
+# LAYOUT PRINCIPAL
 # ======================================
 
 col1, col2 = st.columns([1, 1])
@@ -42,7 +50,8 @@ with col1:
     st.subheader("📦 Dados do Produto")
 
     nome_produto = st.text_input(
-        "Nome do Produto ou Serviço"
+        "Nome do Produto ou Serviço",
+        help="Digite o nome do produto ou serviço que será precificado."
     )
 
     st.divider()
@@ -56,19 +65,22 @@ with col1:
     custo_produto = st.number_input(
         "Produto / Material",
         min_value=0.0,
-        format="%.2f"
+        format="%.2f",
+        help="Valor pago pelo produto ou matéria-prima."
     )
 
     frete = st.number_input(
         "Frete / Deslocamento",
         min_value=0.0,
-        format="%.2f"
+        format="%.2f",
+        help="Custos de entrega, transporte ou deslocamento."
     )
 
     outros_custos = st.number_input(
         "Outros Custos",
         min_value=0.0,
-        format="%.2f"
+        format="%.2f",
+        help="Custos adicionais relacionados à operação."
     )
 
     st.divider()
@@ -83,41 +95,46 @@ with col1:
         "Impostos (%)",
         min_value=0.0,
         max_value=100.0,
-        format="%.2f"
+        format="%.2f",
+        help="Percentual de impostos cobrados sobre a venda."
     )
 
     taxas = st.number_input(
         "Taxas (%)",
         min_value=0.0,
         max_value=100.0,
-        format="%.2f"
+        format="%.2f",
+        help="Taxas de cartão, marketplace ou gateway."
     )
 
     comissao = st.number_input(
         "Comissão (%)",
         min_value=0.0,
         max_value=100.0,
-        format="%.2f"
+        format="%.2f",
+        help="Percentual pago em comissão sobre a venda."
     )
 
     administrativo = st.number_input(
         "Custo Administrativo (%)",
         min_value=0.0,
         max_value=100.0,
-        format="%.2f"
+        format="%.2f",
+        help="Custos indiretos do negócio (energia, aluguel, internet, etc)."
     )
 
     perdas = st.number_input(
         "Perdas (%)",
         min_value=0.0,
         max_value=100.0,
-        format="%.2f"
+        format="%.2f",
+        help="Margem para desperdícios, trocas ou imprevistos."
     )
 
     st.divider()
 
     # ==================================
-    # MARGEM
+    # OBJETIVO DE LUCRO
     # ==================================
 
     st.subheader("🎯 Objetivo de Lucro")
@@ -126,7 +143,8 @@ with col1:
         "Margem Desejada (%)",
         min_value=0,
         max_value=100,
-        value=30
+        value=30,
+        help="Percentual de lucro desejado sobre a venda."
     )
 
     st.divider()
@@ -172,6 +190,34 @@ with col2:
 
         else:
 
+            # ==================================
+            # ALERTAS INTELIGENTES
+            # ==================================
+
+            if resultado['percentual_operacional'] > 40:
+
+                st.warning(
+                    "⚠️ Seus custos operacionais estão altos. Isso pode reduzir sua competitividade."
+                )
+
+            if resultado['markup'] > 4:
+
+                st.warning(
+                    "⚠️ O markup está elevado. Verifique se o preço continua competitivo."
+                )
+
+            if resultado['margem_real'] < 10:
+
+                st.warning(
+                    "⚠️ Sua margem de lucro está baixa."
+                )
+
+            if resultado['margem_real'] >= 30:
+
+                st.success(
+                    "✅ Sua margem está saudável."
+                )
+
             # ==============================
             # CARDS
             # ==============================
@@ -182,7 +228,7 @@ with col2:
 
                 st.metric(
                     "💵 Custos Diretos",
-                    f"R$ {resultado['custos_diretos']}"
+                    formatar_moeda(resultado['custos_diretos'])
                 )
 
                 st.metric(
@@ -199,12 +245,12 @@ with col2:
 
                 st.metric(
                     "🏷️ Preço Sugerido",
-                    f"R$ {resultado['preco_sugerido']}"
+                    formatar_moeda(resultado['preco_sugerido'])
                 )
 
                 st.metric(
                     "💰 Lucro Líquido",
-                    f"R$ {resultado['lucro']}"
+                    formatar_moeda(resultado['lucro'])
                 )
 
                 st.metric(
@@ -257,6 +303,11 @@ with col2:
 
             )
 
+            grafico.update_traces(
+                textposition='inside',
+                textinfo='percent+label'
+            )
+
             st.plotly_chart(
                 grafico,
                 use_container_width=True
@@ -270,33 +321,45 @@ with col2:
 
             st.subheader("📋 Composição do Preço")
 
+            breakdown_exibicao = breakdown.copy()
+
+            breakdown_exibicao["Valor"] = breakdown_exibicao["Valor"].apply(
+                formatar_moeda
+            )
+
             st.dataframe(
-                breakdown,
+                breakdown_exibicao,
                 use_container_width=True
             )
 
             st.divider()
 
             # ==============================
-            # RESUMO
+            # DIAGNÓSTICO FINANCEIRO
             # ==============================
 
-            st.subheader("🧾 Resumo Executivo")
+            st.subheader("🧾 Diagnóstico Financeiro")
 
             st.info(f"""
 
-            Produto/Serviço: {nome_produto}
+Produto/Serviço: {nome_produto}
 
-            Custos Diretos: R$ {resultado['custos_diretos']}
+💵 Custos Diretos:
+{formatar_moeda(resultado['custos_diretos'])}
 
-            Custos Operacionais: {resultado['percentual_operacional']}%
+📊 Custos Operacionais:
+{resultado['percentual_operacional']}%
 
-            Markup Equivalente: {resultado['markup']}x
+⚙️ Markup Equivalente:
+{resultado['markup']}x
 
-            Margem Real: {resultado['margem_real']}%
+📈 Margem Real:
+{resultado['margem_real']}%
 
-            Lucro Líquido: R$ {resultado['lucro']}
+💰 Lucro Líquido:
+{formatar_moeda(resultado['lucro'])}
 
-            Preço Final Sugerido: R$ {resultado['preco_sugerido']}
+🏷️ Preço Final Sugerido:
+{formatar_moeda(resultado['preco_sugerido'])}
 
-            """)
+""")
